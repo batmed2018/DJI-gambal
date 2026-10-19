@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>حاسبة زاوية ميل الجيمبل</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --line: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #0ea5e9;
+      --ok: #4ade80;
+      --err: #f87171;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.18), transparent 35%),
+        radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.12), transparent 40%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+    }
+
+    .sub, .formula, .hint {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .formula {
+      margin-top: 8px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92rem;
+    }
+
+    .lang {
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 600;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    select:focus, input:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+    }
+
+    button.calc {
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px 16px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color: #042033;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.calc:hover { filter: brightness(1.08); }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      color: var(--err);
+      font-weight: 600;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .result h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .angle {
+      margin: 6px 0 8px;
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .range {
+      margin-top: 10px;
+      font-size: 0.92rem;
+    }
+
+    .ok { color: var(--ok); }
+    .bad { color: var(--err); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 id="title">حاسبة زاوية ميل الجيمبل</h1>
+        <p class="sub" id="subtitle">زاوية ميل كاميرا الدرون نحو الهدف</p>
+        <p class="formula" id="formula">pitch = −atan(الارتفاع ÷ المسافة)</p>
+      </div>
+      <button class="lang" id="langBtn" type="button">EN</button>
+    </header>
+
+    <form class="card" id="form" autocomplete="off">
+      <label for="drone" id="droneLabel">نوع الدرون</label>
+      <select id="drone"></select>
+
+      <label for="camera" id="cameraLabel">نوع الكاميرا</label>
+      <select id="camera"></select>
+
+      <label for="height" id="heightLabel">الارتفاع عن الهدف (م)</label>
+      <input id="height" type="number" min="0" step="any" inputmode="decimal" />
+
+      <label for="distance" id="distanceLabel">المسافة الأفقية عن الهدف (م)</label>
+      <input id="distance" type="number" min="0" step="any" inputmode="decimal" />
+
+      <button class="calc" id="calcBtn" type="submit">احسب زاوية الميل</button>
+
+      <p class="error" id="error"></p>
+
+      <div class="result" id="result">
+        <h2 id="resultTitle">زاوية الميل المطلوبة</h2>
+        <div class="angle" id="angle">—</div>
+        <p class="hint" id="signNote">الإشارة السالبة تعني أن الكاميرا تميل للأسفل نحو الهدف.</p>
+        <p class="range" id="rangeNote"></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const catalog = [
+      {
+        id: "m350",
+        name: "DJI Matrice 350 RTK",
+        cameras: [
+          { id: "h30t", name: "Zenmuse H30T", minPitch: -90, maxPitch: 30 },
+          { id: "h20t", name: "Zenmuse H20T", minPitch: -90, maxPitch: 30 }
+        ]
+      },
+      {
+        id: "m30t",
+        name: "DJI Matrice 30T",
+        cameras: [
+          { id: "m30t-cam", name: "Matrice 30T Camera", minPitch: -90, maxPitch: 30 }
+        ]
+      },
+      {
+        id: "m3e",
+        name: "DJI Mavic 3 Enterprise",
+        cameras: [
+          { id: "m3e-cam", name: "Mavic 3 Enterprise Camera", minPitch: -90, maxPitch: 30 }
+        ]
+      }
+    ];
+
+    const i18n = {
+      ar: {
+        dir: "rtl",
+        lang: "ar",
+        title: "حاسبة زاوية ميل الجيمبل",
+        subtitle: "زاوية ميل كاميرا الدرون نحو الهدف",
+        formula: "pitch = −atan(الارتفاع ÷ المسافة)",
+        drone: "نوع الدرون",
+        camera: "نوع الكاميرا",
+        height: "الارتفاع عن الهدف (م)",
+        distance: "المسافة الأفقية عن الهدف (م)",
+        calculate: "احسب زاوية الميل",
+        resultTitle: "زاوية الميل المطلوبة",
+        signNote: "الإشارة السالبة تعني أن الكاميرا تميل للأسفل نحو الهدف.",
+        invalidNumber: "أدخل أرقاماً صحيحة أكبر من أو تساوي صفر.",
+        bothZero: "لا يمكن أن يكون الارتفاع والمسافة صفراً معاً.",
+        outOfRange: "الزاوية خارج نطاق الجيمبل لهذه الكاميرا",
+        inRange: "ضمن نطاق الجيمبل",
+        toggle: "EN"
+      },
+      en: {
+        dir: "ltr",
+        lang: "en",
+        title: "Gimbal Pitch Calculator",
+        subtitle: "Drone camera pitch toward the target",
+        formula: "pitch = −atan(height ÷ distance)",
+        drone: "Drone type",
+        camera: "Camera type",
+        height: "Height above target (m)",
+        distance: "Horizontal distance (m)",
+        calculate: "Calculate Gimbal Pitch",
+        resultTitle: "Required gimbal pitch",
+        signNote: "A negative sign means the camera tilts down toward the target.",
+        invalidNumber: "Enter valid numbers ≥ 0.",
+        bothZero: "Height and distance cannot both be 0.",
+        outOfRange: "Angle is outside this camera gimbal range",
+        inRange: "Within gimbal range",
+        toggle: "ع"
+      }
+    };
+
+    let locale = "ar";
+
+    const droneEl = document.getElementById("drone");
+    const cameraEl = document.getElementById("camera");
+    const heightEl = document.getElementById("height");
+    const distanceEl = document.getElementById("distance");
+    const errorEl = document.getElementById("error");
+    const resultEl = document.getElementById("result");
+    const angleEl = document.getElementById("angle");
+    const rangeEl = document.getElementById("rangeNote");
+
+    function t() {
+      return i18n[locale];
+    }
+
+    function applyStrings() {
+      const s = t();
+      document.documentElement.lang = s.lang;
+      document.documentElement.dir = s.dir;
+      document.title = s.title;
+      document.getElementById("title").textContent = s.title;
+      document.getElementById("subtitle").textContent = s.subtitle;
+      document.getElementById("formula").textContent = s.formula;
+      document.getElementById("droneLabel").textContent = s.drone;
+      document.getElementById("cameraLabel").textContent = s.camera;
+      document.getElementById("heightLabel").textContent = s.height;
+      document.getElementById("distanceLabel").textContent = s.distance;
+      document.getElementById("calcBtn").textContent = s.calculate;
+      document.getElementById("resultTitle").textContent = s.resultTitle;
+      document.getElementById("signNote").textContent = s.signNote;
+      document.getElementById("langBtn").textContent = s.toggle;
+    }
+
+    function fillSelect(el, items, selectedId) {
+      el.innerHTML = items
+        .map((item) => `<option value="${item.id}">${item.name}</option>`)
+        .join("");
+      if (selectedId) el.value = selectedId;
+    }
+
+    function currentDrone() {
+      return catalog.find((d) => d.id === droneEl.value) || catalog[0];
+    }
+
+    function currentCamera() {
+      const drone = currentDrone();
+      return drone.cameras.find((c) => c.id === cameraEl.value) || drone.cameras[0];
+    }
+
+    function renderDrones() {
+      fillSelect(droneEl, catalog, catalog[0].id);
+      renderCameras();
+    }
+
+    function renderCameras() {
+      const drone = currentDrone();
+      fillSelect(cameraEl, drone.cameras, drone.cameras[0].id);
+    }
+
+    function calculatePitch(height, distance) {
+      if (distance === 0) return -90;
+      return -Math.atan(height / distance) * (180 / Math.PI);
+    }
+
+    function hideResult() {
+      resultEl.style.display = "none";
+    }
+
+    function showError(message) {
+      errorEl.style.display = "block";
+      errorEl.textContent = message;
+      hideResult();
+    }
+
+    function clearError() {
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+    }
+
+    document.getElementById("langBtn").addEventListener("click", () => {
+      locale = locale === "ar" ? "en" : "ar";
+      applyStrings();
+      if (resultEl.style.display === "block") {
+        document.getElementById("form").requestSubmit();
+      } else if (errorEl.style.display === "block") {
+        document.getElementById("form").requestSubmit();
+      }
+    });
+
+    droneEl.addEventListener("change", () => {
+      renderCameras();
+      hideResult();
+      clearError();
+    });
+
+    cameraEl.addEventListener("change", () => {
+      hideResult();
+    });
+
+    document.getElementById("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const s = t();
+      const height = Number(heightEl.value);
+      const distance = Number(distanceEl.value);
+
+      if (
+        heightEl.value.trim() === "" ||
+        distanceEl.value.trim() === "" ||
+        !Number.isFinite(height) ||
+        !Number.isFinite(distance) ||
+        height < 0 ||
+        distance < 0
+      ) {
+        showError(s.invalidNumber);
+        return;
+      }
+
+      if (height === 0 && distance === 0) {
+        showError(s.bothZero);
+        return;
+      }
+
+      const degrees = calculatePitch(height, distance);
+      const camera = currentCamera();
+      const inRange = degrees >= camera.minPitch && degrees <= camera.maxPitch;
+
+      clearError();
+      angleEl.textContent = `${degrees.toFixed(1)}°`;
+      rangeEl.className = "range " + (inRange ? "ok" : "bad");
+      rangeEl.textContent = `${inRange ? s.inRange : s.outOfRange} (${camera.minPitch}° … ${camera.maxPitch}°)`;
+      resultEl.style.display = "block";
+    });
+
+    applyStrings();
+    renderDrones();
+  </script>
+</body>
+</html>
